@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Kind of Technology Ethicist Are You?</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom CSS for sci-fi theme */
+        :root {
+            --laser-blue: #0088ff;
+            --magenta: #ff56f6;
+            --synth-green: #00ffa3;
+            --deep-space: #0a0a0f;
+            --space-blue: #1a1a2e;
+        }
+
+        body {
+            background: var(--deep-space);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .orbitron {
+            font-family: 'Orbitron', monospace;
+        }
+
+        /* Animated star field background */
+        .star-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: linear-gradient(135deg, var(--deep-space) 0%, var(--space-blue) 100%);
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Neon glow effects */
+        .neon-glow {
+            box-shadow: 0 0 20px var(--laser-blue), 0 0 40px var(--laser-blue), 0 0 60px var(--laser-blue);
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px var(--laser-blue), 0 0 20px var(--laser-blue), 0 0 30px var(--laser-blue);
+        }
+
+        .neon-border {
+            border: 2px solid var(--laser-blue);
+            box-shadow: 0 0 20px var(--laser-blue);
+        }
+
+        /* Hover effects */
+        .option-hover:hover {
+            background: rgba(0, 136, 255, 0.1);
+            border-color: var(--laser-blue);
+            box-shadow: 0 0 15px var(--laser-blue);
+            transform: translateY(-2px);
+        }
+
+        /* Progress bar */
+        .progress-segment {
+            background: rgba(0, 136, 255, 0.3);
+            border-right: 1px solid var(--laser-blue);
+        }
+
+        .progress-segment.active {
+            background: var(--laser-blue);
+            box-shadow: 0 0 10px var(--laser-blue);
+        }
+
+        /* Card animations */
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Typing effect */
+        .typing {
+            border-right: 2px solid var(--laser-blue);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { border-color: var(--laser-blue); }
+            51%, 100% { border-color: transparent; }
+        }
+
+        /* Charts styling */
+        canvas {
+            filter: drop-shadow(0 0 10px var(--laser-blue));
+        }
+
+        /* Accessibility - reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .star, .slide-in, .typing {
+                animation: none;
+            }
+        }
+
+        /* Focus indicators */
+        .focus-ring:focus {
+            outline: 2px solid var(--laser-blue);
+            outline-offset: 2px;
+        }
+
+        /* Hidden PDF template */
+        #pdf-template {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            background: white;
+            color: black;
+            padding: 40px;
+            width: 800px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Star field background -->
+    <div class="star-field" id="starField"></div>
+
+    <!-- Hidden PDF template -->
+    <div id="pdf-template">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #0088ff; font-family: 'Orbitron', monospace; font-size: 28px; margin-bottom: 10px;">
+                Technology Ethics Quiz Results
+            </h1>
+            <p style="color: #666; font-size: 14px;" id="pdf-timestamp"></p>
+        </div>
+        
+        <div id="pdf-chart-container" style="text-align: center; margin: 30px 0;">
+            <!-- Chart will be inserted here -->
+        </div>
+        
+        <div id="pdf-results">
+            <!-- Results content will be inserted here -->
+        </div>
+        
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; text-align: center; color: #666; font-size: 12px;">
+            Generated by Nebula Forge Ethics Quiz
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Quiz data
+        const QUIZ_DATA = {
+            lenses: {
+                CR: "Cultural Relativism",
+                DC: "Divine Command",
+                DE: "Kantian / Deontological",
+                UE: "Ethical Egoism",
+                UT: "Utilitarianism",
+                VE: "Virtue Ethics / Golden Mean",
+                SC: "Social Contract",
+                CA: "Care Ethics"
+            },
+            questions: [
+                {
+                    id: 1,
+                    text: "Hospital AI triage system decides who receives the last ventilators.",
+                    options: [
+                        { label: "Save the greatest number of life-years.", lens: "UT" },
+                        { label: "First-come, first-served per hospital policy.", lens: "DE" },
+                        { label: "Consult clergy for a sanctity-of-life ruling.", lens: "DC" },
+                        { label: "Prioritize your close relatives in care.", lens: "CA" }
+                    ]
+                },
+                {
+                    id: 2,
+                    text: "Social media algorithm amplifies divisive political content for engagement.",
+                    options: [
+                        { label: "Maximize platform profits and user time.", lens: "UE" },
+                        { label: "Follow community standards regardless of culture.", lens: "DE" },
+                        { label: "Adapt content rules to each society's values.", lens: "CR" },
+                        { label: "Prioritize vulnerable users' mental health.", lens: "CA" }
+                    ]
+                },
+                {
+                    id: 3,
+                    text: "Autonomous vehicle must choose between hitting one pedestrian or five.",
+                    options: [
+                        { label: "Minimize total harm - hit the one person.", lens: "UT" },
+                        { label: "Never program to actively harm anyone.", lens: "DE" },
+                        { label: "Follow divine commandment against killing.", lens: "DC" },
+                        { label: "Cultivate wise programming practices.", lens: "VE" }
+                    ]
+                },
+                {
+                    id: 4,
+                    text: "AI hiring system shows bias against certain demographic groups.",
+                    options: [
+                        { label: "Use bias if it benefits your company.", lens: "UE" },
+                        { label: "Treat all candidates with equal respect.", lens: "DE" },
+                        { label: "Ensure transparent, fair hiring processes.", lens: "SC" },
+                        { label: "Focus on supporting underrepresented groups.", lens: "CA" }
+                    ]
+                },
+                {
+                    id: 5,
+                    text: "Tech company refuses government data access requests from authoritarian regime.",
+                    options: [
+                        { label: "Protect user data per company values.", lens: "VE" },
+                        { label: "Respect local laws and cultural norms.", lens: "CR" },
+                        { label: "Maximize overall human freedom and happiness.", lens: "UT" },
+                        { label: "Honor divine principles of human dignity.", lens: "DC" }
+                    ]
+                },
+                {
+                    id: 6,
+                    text: "Facial recognition system deployed in schools to prevent violence.",
+                    options: [
+                        { label: "Implement if it saves lives overall.", lens: "UT" },
+                        { label: "Obtain informed consent from all families.", lens: "SC" },
+                        { label: "Never surveil without explicit permission.", lens: "DE" },
+                        { label: "Consider impact on vulnerable students.", lens: "CA" }
+                    ]
+                },
+                {
+                    id: 7,
+                    text: "Gene editing technology could eliminate hereditary diseases.",
+                    options: [
+                        { label: "Follow divine plan for human nature.", lens: "DC" },
+                        { label: "Reduce suffering for maximum benefit.", lens: "UT" },
+                        { label: "Respect human dignity and autonomy.", lens: "DE" },
+                        { label: "Support families facing genetic disorders.", lens: "CA" }
+                    ]
+                },
+                {
+                    id: 8,
+                    text: "Cryptocurrency mining consumes massive amounts of energy.",
+                    options: [
+                        { label: "Mine if personally profitable.", lens: "UE" },
+                        { label: "Consider environmental impact on future generations.", lens: "VE" },
+                        { label: "Follow agreed-upon environmental standards.", lens: "SC" },
+                        { label: "Accept different cultural attitudes toward nature.", lens: "CR" }
+                    ]
+                },
+                {
+                    id: 9,
+                    text: "AI chatbot provides mental health advice without human therapist oversight.",
+                    options: [
+                        { label: "Ensure transparent disclaimers about AI limitations.", lens: "SC" },
+                        { label: "Provide caring, empathetic responses always.", lens: "CA" },
+                        { label: "Maximize accessibility and help for users.", lens: "UT" },
+                        { label: "Never substitute AI for human professional care.", lens: "DE" }
+                    ]
+                },
+                {
+                    id: 10,
+                    text: "Smart home devices constantly collect family conversation data.",
+                    options: [
+                        { label: "Collect data that improves your experience.", lens: "UE" },
+                        { label: "Respect cultural privacy expectations.", lens: "CR" },
+                        { label: "Obtain explicit consent for all data use.", lens: "DE" },
+                        { label: "Develop balanced privacy practices.", lens: "VE" }
+                    ]
+                },
+                {
+                    id: 11,
+                    text: "Virtual reality creates addictive experiences targeting children.",
+                    options: [
+                        { label: "Prioritize child development and wellbeing.", lens: "CA" },
+                        { label: "Follow sacred duties to protect innocence.", lens: "DC" },
+                        { label: "Create responsible, balanced gaming experiences.", lens: "VE" },
+                        { label: "Maximize engagement within legal boundaries.", lens: "UE" }
+                    ]
+                },
+                {
+                    id: 12,
+                    text: "Smart-city sensors sell citizen data to fund free public transit.",
+                    options: [
+                        { label: "Consent-based social bargain.", lens: "SC" },
+                        { label: "Greater happiness for commuters.", lens: "UT" },
+                        { label: "Selling data treats people as means.", lens: "DE" },
+                        { label: "Focus on marginalized riders' well-being.", lens: "CA" }
+                    ]
+                }
+            ]
+        };
+
+        const RESULT_BLURBS = {
+            CR: "You judge tech by the culture that birthed it; context is king. Expect to ask \"Whose values?\" before saying \"good\" or \"bad.\"",
+            DC: "You look skyward: moral code is divine decree. Tech is ethical when it honors that higher command.",
+            DE: "Autonomy and duty steer you. If an algorithm overrides consent, you slam the brakes.",
+            UE: "Enlightened self-interest fuels your calls. If a gadget boosts your flourishing—you're in.",
+            UT: "You run the happiness calculus. Net well-being outweighs individual hang-ups every time.",
+            VE: "Character first: the 'good technologist' cultivates balance and wisdom in every click.",
+            SC: "Fair rules and transparent consent are your north star. Society signs the tech contract—or it's void.",
+            CA: "Empathy in action: relationships, vulnerability, and care shape every digital choice."
+        };
+
+        // Utility functions
+        const saveToLocalStorage = (data) => {
+            localStorage.setItem('tech-ethics-quiz', JSON.stringify(data));
+        };
+
+        const loadFromLocalStorage = () => {
+            const data = localStorage.getItem('tech-ethics-quiz');
+            return data ? JSON.parse(data) : null;
+        };
+
+        const calculateResults = (answers) => {
+            const scores = {};
+            Object.keys(QUIZ_DATA.lenses).forEach(lens => scores[lens] = 0);
+            
+            answers.forEach(answer => {
+                if (answer) scores[answer]++;
+            });
+
+            const results = Object.entries(scores).map(([lens, score]) => ({
+                lens,
+                name: QUIZ_DATA.lenses[lens],
+                score,
+                percent: Math.round((score / QUIZ_DATA.questions.length) * 100)
+            })).sort((a, b) => b.percent - a.percent);
+
+            return results;
+        };
+
+        // Star field component
+        const StarField = () => {
+            useEffect(() => {
+                const starField = document.getElementById('starField');
+                const numStars = 100;
+
+                for (let i = 0; i < numStars; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    star.style.width = Math.random() * 3 + 1 + 'px';
+                    star.style.height = star.style.width;
+                    star.style.animationDelay = Math.random() * 3 + 's';
+                    starField.appendChild(star);
+                }
+            }, []);
+
+            return null;
+        };
+
+        // Landing page component
+        const LandingHero = ({ onStart }) => {
+            return (
+                <div className="min-h-screen flex items-center justify-center px-4">
+                    <div className="text-center max-w-4xl">
+                        <h1 className="orbitron text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-green-400 neon-text mb-8">
+                            NEBULA FORGE
+                        </h1>
+                        <h2 className="orbitron text-2xl md:text-4xl text-blue-300 mb-6">
+                            What Kind of Technology Ethicist Are You?
+                        </h2>
+                        <p className="text-lg md:text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+                            Navigate 12 cutting-edge scenarios that challenge your moral compass. 
+                            Discover which ethical framework guides your decisions in our digital future.
+                        </p>
+                        <button 
+                            onClick={onStart}
+                            className="orbitron text-xl font-bold px-12 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg neon-border hover:neon-glow transition-all duration-300 focus-ring"
+                            aria-label="Begin the ethics quiz"
+                        >
+                            INITIATE SEQUENCE
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // Progress bar component
+        const ProgressBar = ({ current, total }) => {
+            const segments = Array.from({ length: total }, (_, i) => i + 1);
+            
+            return (
+                <div className="w-full max-w-2xl mx-auto mb-8">
+                    <div className="flex rounded-lg overflow-hidden border border-blue-500">
+                        {segments.map(segment => (
+                            <div 
+                                key={segment}
+                                className={`progress-segment h-3 flex-1 transition-all duration-300 ${
+                                    segment <= current ? 'active' : ''
+                                }`}
+                            />
+                        ))}
+                    </div>
+                    <p className="text-center text-blue-300 mt-2 text-sm">
+                        Scenario {current} of {total}
+                    </p>
+                </div>
+            );
+        };
+
+        // Question card component
+        const QuestionCard = ({ question, onAnswer, questionIndex }) => {
+            const [displayText, setDisplayText] = useState('');
+            const [showOptions, setShowOptions] = useState(false);
+
+            useEffect(() => {
+                let i = 0;
+                const text = question.text;
+                const timer = setInterval(() => {
+                    setDisplayText(text.slice(0, i));
+                    i++;
+                    if (i > text.length) {
+                        clearInterval(timer);
+                        setTimeout(() => setShowOptions(true), 300);
+                    }
+                }, 30);
+
+                return () => clearInterval(timer);
+            }, [question.text]);
+
+            return (
+                <div className="slide-in max-w-4xl mx-auto px-4">
+                    <div className="bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl p-8 neon-border">
+                        <h3 className="orbitron text-2xl md:text-3xl font-bold text-blue-300 mb-8 min-h-[100px] flex items-center">
+                            <span className="typing">{displayText}</span>
+                        </h3>
+                        
+                        {showOptions && (
+                            <div className="space-y-4">
+                                {question.options.map((option, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => onAnswer(option.lens)}
+                                        className="w-full text-left p-6 rounded-lg border-2 border-gray-600 bg-gray-800 option-hover transition-all duration-300 focus-ring"
+                                        aria-label={`Option ${index + 1}: ${option.label}`}
+                                    >
+                                        <span className="text-lg text-gray-200">{option.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // Results panel component
+        const ResultsPanel = ({ results, onRetake, onDownloadPDF }) => {
+            const chartRef = useRef(null);
+            const primaryResult = results[0];
+
+            useEffect(() => {
+                const ctx = chartRef.current.getContext('2d');
+                
+                const pieChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: results.map(r => r.name),
+                        datasets: [{
+                            data: results.map(r => r.percent),
+                            backgroundColor: [
+                                '#0088ff', '#ff56f6', '#00ffa3', '#ffaa00',
+                                '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24'
+                            ],
+                            borderColor: '#1a1a2e',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#e5e7eb',
+                                    padding: 20,
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                return () => pieChart.destroy();
+            }, [results]);
+
+            return (
+                <div className="min-h-screen flex items-center justify-center px-4 py-8">
+                    <div className="max-w-6xl w-full">
+                        <div className="text-center mb-8">
+                            <h2 className="orbitron text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400 mb-4">
+                                ANALYSIS COMPLETE
+                            </h2>
+                            <p className="text-xl text-gray-300">Your ethical framework has been decoded</p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-8 mb-8">
+                            {/* Chart */}
+                            <div className="bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl p-6 neon-border">
+                                <h3 className="orbitron text-xl font-bold text-blue-300 mb-4 text-center">
+                                    Ethical Distribution
+                                </h3>
+                                <div className="relative">
+                                    <canvas ref={chartRef} />
+                                </div>
+                            </div>
+
+                            {/* Primary Result */}
+                            <div className="bg-gradient-to-br from-gray-900 to-purple-900 rounded-xl p-6 neon-border">
+                                <h3 className="orbitron text-xl font-bold text-purple-300 mb-4">
+                                    Primary Lens: {primaryResult.name}
+                                </h3>
+                                <div className="text-4xl font-bold text-purple-400 mb-4">
+                                    {primaryResult.percent}%
+                                </div>
+                                <p className="text-gray-300 leading-relaxed">
+                                    {RESULT_BLURBS[primaryResult.lens]}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* All Results */}
+                        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 neon-border mb-8">
+                            <h3 className="orbitron text-xl font-bold text-blue-300 mb-4">
+                                Complete Breakdown
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {results.map((result, index) => (
+                                    <div key={result.lens} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+                                        <span className="text-gray-300">{result.name}</span>
+                                        <span className="font-bold text-blue-400">{result.percent}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button
+                                onClick={onDownloadPDF}
+                                className="orbitron font-bold px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg neon-border hover:neon-glow transition-all duration-300 focus-ring"
+                            >
+                                DOWNLOAD REPORT
+                            </button>
+                            <button
+                                onClick={onRetake}
+                                className="orbitron font-bold px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg neon-border hover:neon-glow transition-all duration-300 focus-ring"
+                            >
+                                RETAKE ASSESSMENT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Main App component
+        const App = () => {
+            const [gameState, setGameState] = useState('landing'); // landing, quiz, results
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [answers, setAnswers] = useState(Array(QUIZ_DATA.questions.length).fill(null));
+            const [results, setResults] = useState(null);
+
+            // Load saved progress on mount
+            useEffect(() => {
+                const savedData = loadFromLocalStorage();
+                if (savedData) {
+                    setCurrentQuestion(savedData.currentQuestion || 0);
+                    setAnswers(savedData.answers || Array(QUIZ_DATA.questions.length).fill(null));
+                    if (savedData.gameState === 'results' && savedData.results) {
+                        setResults(savedData.results);
+                        setGameState('results');
+                    } else if (savedData.currentQuestion > 0) {
+                        setGameState('quiz');
+                    }
+                }
+            }, []);
+
+            const startQuiz = () => {
+                setGameState('quiz');
+                setCurrentQuestion(0);
+                setAnswers(Array(QUIZ_DATA.questions.length).fill(null));
+                localStorage.removeItem('tech-ethics-quiz');
+            };
+
+            const handleAnswer = (lens) => {
+                const newAnswers = [...answers];
+                newAnswers[currentQuestion] = lens;
+                setAnswers(newAnswers);
+
+                const nextQuestion = currentQuestion + 1;
+                
+                // Save progress
+                saveToLocalStorage({
+                    gameState: 'quiz',
+                    currentQuestion: nextQuestion,
+                    answers: newAnswers
+                });
+
+                if (nextQuestion < QUIZ_DATA.questions.length) {
+                    setCurrentQuestion(nextQuestion);
+                } else {
+                    // Quiz complete
+                    const calculatedResults = calculateResults(newAnswers);
+                    setResults(calculatedResults);
+                    setGameState('results');
+                    
+                    saveToLocalStorage({
+                        gameState: 'results',
+                        currentQuestion: nextQuestion,
+                        answers: newAnswers,
+                        results: calculatedResults
+                    });
+                }
+            };
+
+            const retakeQuiz = () => {
+                localStorage.removeItem('tech-ethics-quiz');
+                setGameState('landing');
+                setCurrentQuestion(0);
+                setAnswers(Array(QUIZ_DATA.questions.length).fill(null));
+                setResults(null);
+            };
+
+            const downloadPDF = () => {
+                if (!results) return;
+
+                // Prepare PDF content
+                const timestamp = new Date().toLocaleString();
+                document.getElementById('pdf-timestamp').textContent = `Generated on ${timestamp}`;
+
+                // Create chart image
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    const chartImg = document.createElement('img');
+                    chartImg.src = canvas.toDataURL();
+                    chartImg.style.maxWidth = '400px';
+                    chartImg.style.height = 'auto';
+                    
+                    const chartContainer = document.getElementById('pdf-chart-container');
+                    chartContainer.innerHTML = '';
+                    chartContainer.appendChild(chartImg);
+                }
+
+                // Add results table
+                const resultsDiv = document.getElementById('pdf-results');
+                resultsDiv.innerHTML = `
+                    <h2 style="color: #0088ff; font-family: 'Orbitron', monospace; font-size: 20px; margin-bottom: 20px;">
+                        Primary Result: ${results[0].name} (${results[0].percent}%)
+                    </h2>
+                    <p style="margin-bottom: 30px; line-height: 1.6;">
+                        ${RESULT_BLURBS[results[0].lens]}
+                    </p>
+                    <h3 style="color: #0088ff; font-family: 'Orbitron', monospace; font-size: 16px; margin-bottom: 15px;">
+                        Complete Breakdown:
+                    </h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f5f5f5;">
+                                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Ethical Framework</th>
+                                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${results.map(result => `
+                                <tr>
+                                    <td style="padding: 10px; border: 1px solid #ddd;">${result.name}</td>
+                                    <td style="padding: 10px; text-align: right; border: 1px solid #ddd; font-weight: bold;">${result.percent}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+
+                // Generate PDF
+                const now = new Date();
+                const filename = `ethics-quiz-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.pdf`;
+
+                const element = document.getElementById('pdf-template');
+                const opt = {
+                    margin: 0.5,
+                    filename: filename,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                html2pdf().set(opt).from(element).save();
+            };
+
+            return (
+                <>
+                    <StarField />
+                    {gameState === 'landing' && <LandingHero onStart={startQuiz} />}
+                    {gameState === 'quiz' && (
+                        <div className="min-h-screen flex flex-col justify-center py-8">
+                            <ProgressBar current={currentQuestion + 1} total={QUIZ_DATA.questions.length} />
+                            <QuestionCard 
+                                question={QUIZ_DATA.questions[currentQuestion]}
+                                onAnswer={handleAnswer}
+                                questionIndex={currentQuestion}
+                            />
+                        </div>
+                    )}
+                    {gameState === 'results' && results && (
+                        <ResultsPanel 
+                            results={results}
+                            onRetake={retakeQuiz}
+                            onDownloadPDF={downloadPDF}
+                        />
+                    )}
+                </>
+            );
+        };
+
+        // Render the app
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
